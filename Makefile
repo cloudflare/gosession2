@@ -9,11 +9,11 @@ export PATH := $(PWD)/bin:$(PWD)/gopath/bin:$(PATH)
 
 .PHONY: all
 all:
-	$(GOCMD) install -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -v gophq.io/...
+	$(GOCMD) install -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -v gophq.io...
 
 .PHONY: race
 race:
-	$(GOCMD) install -race -v `$(GOCMD) list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' gophq.io/...`
+	$(GOCMD) install -race -v `$(GOCMD) list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' gophq.io...`
 
 .PHONY: test
 test:
@@ -31,7 +31,7 @@ run-tls-server: all
 run-tls-producer: all
 	./bin/gophq -mode=produce -tls.ca=etc/ca.crt -tls.cert=etc/client.crt -tls.key=etc/client.key
 
-TEST=$(subst $(space),$(newline),$(shell cd src && $(GOCMD) list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.Dir}}{{end}}' gophq.io/...))
+TEST=$(subst $(space),$(newline),$(shell cd src && $(GOCMD) list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.Dir}}{{end}}' ./gophq.io...))
 
 .PHONY: test-compile
 test-compile: $(addsuffix .test-compile, $(TEST))
