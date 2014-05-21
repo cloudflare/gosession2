@@ -46,3 +46,15 @@ func (m *Message) decodeSet() (err error) {
 	m.Set = &MessageSet{}
 	return m.Set.decode(&pd)
 }
+
+func NewMessage(key, value []byte) *Message {
+	var kb []byte
+	var vb []byte
+	if key != nil {
+		kb, _ = ByteEncoder(key).Encode()
+	}
+	if value != nil {
+		vb, _ = ByteEncoder(value).Encode()
+	}
+	return &Message{Key: kb, Value: vb}
+}

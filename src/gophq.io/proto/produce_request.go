@@ -39,16 +39,8 @@ func (p *ProduceRequest) decode(pd packetDecoder) error {
 	return err
 }
 
-func (p *ProduceRequest) AddMessage(key, value Encoder) {
-	var kb []byte
-	var vb []byte
-	if key != nil {
-		kb, _ = key.Encode()
-	}
-	if value != nil {
-		vb, _ = value.Encode()
-	}
-	p.MsgSet.addMessage(&Message{Key: kb, Value: vb})
+func (p *ProduceRequest) AddMessage(msg *Message) {
+	p.MsgSet.addMessage(msg)
 }
 
 func (p *ProduceRequest) key() int16 {

@@ -93,3 +93,7 @@ func (ms *MessageSet) addMessageOffset(msg *Message, offset int64) {
 	block.Offset = offset
 	ms.Messages = append(ms.Messages, block)
 }
+
+func (ms *MessageSet) Clear() {
+	ms.Messages = ms.Messages[:0]
+}

@@ -55,7 +55,8 @@ func (this *Server) Serve(l net.Listener) error {
 		}
 
 		// TODO track these goroutines with a WaitGroup so
-		// that Server can be shut down in an orderly fashion
+		// that Server can be shut down in an orderly fashion.
+		// Especially useful for testing.
 
 		this.wg.Add(1)
 		go func() {

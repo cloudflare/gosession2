@@ -19,6 +19,10 @@ race:
 test:
 	go test ./...
 
+.PHONY: test-race
+test-race:
+	go test -race ./...
+
 TEST=$(subst $(space),$(newline),$(shell cd src && $(GOCMD) list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.Dir}}{{end}}' ./...))
 
 .PHONY: test-compile
