@@ -1,0 +1,80 @@
+TEXT ·GetBigEndianUint64+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVQ (BX),AX
+	BSWAPQ AX
+	MOVQ AX,.noname+32(FP)
+	RET
+
+TEXT ·GetBigEndianUint32+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVL (BX),BX
+	BSWAPL BX
+	MOVL BX,.noname+32(FP)
+	RET
+
+TEXT ·GetBigEndianUint16+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVW (BX),BX
+	ROLW $8,BX
+	MOVW BX,.noname+32(FP)
+	RET
+
+TEXT ·PutBigEndianUint64+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVQ v+32(FP),AX
+	BSWAPQ AX
+	MOVQ AX,(BX)
+	RET
+
+TEXT ·PutBigEndianUint16+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVW v+32(FP),AX
+	ROLW $8,AX
+	MOVW AX,(BX)
+	RET
+
+TEXT ·PutBigEndianUint32+0(SB),$0-40
+	LEAQ b+0(FP),BX
+	MOVQ offset+24(FP),BP
+	MOVQ (BX),BX
+	LEAQ (BX)(BP*1),BX
+	MOVL v+32(FP),AX
+	BSWAPL AX
+	MOVL AX,(BX)
+	RET
+
+TEXT ·SetBigEndianUint16+0(SB),$0-18
+	MOVQ dst+0(FP), BP
+	MOVW v+8(FP), AX
+	ROLW $8,AX
+	MOVW AX, 0(BP)
+	RET
+
+TEXT ·SetBigEndianUint32+0(SB),$0-20
+	MOVQ dst+0(FP), BP
+	MOVL v+8(FP), AX
+	BSWAPL AX
+	MOVL AX, 0(BP)
+	RET
+
+TEXT ·SetBigEndianUint64+0(SB),$0-24
+	MOVQ dst+0(FP), BP
+	MOVQ v+8(FP), AX
+	BSWAPQ AX
+	MOVQ AX, 0(BP)
+	RET

@@ -15,9 +15,17 @@ all:
 race:
 	$(GOCMD) install -race -v `$(GOCMD) list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ./...`
 
+.PHONY: test
+test:
+	go test ./...
+
+TEST=$(subst $(space),$(newline),$(shell cd src && $(GOCMD) list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.Dir}}{{end}}' ./...))
+
 .PHONY: test-compile
-test-compile: all
-	@$(MAKE) --no-print-directory -f Make.tests $@
+test-compile: $(addsuffix .test-compile, $(TEST))
+
+%.test-compile: all
+	cd $* && $(GOCMD) test -compiler=$(COMPILER) -p 1 -v -c .
 
 .PHONY: clean
 clean:
