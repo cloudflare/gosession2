@@ -1,4 +1,4 @@
-package
+package proto
 
 // LatestOffset informs the broker that
 // the consumer wishes to fetch the most

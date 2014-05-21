@@ -1,9 +1,5 @@
 package proto
 
-import (
-	"log"
-)
-
 // Encoder is the interface that wraps the basic Encode method.
 // Anything implementing Encoder can be turned into bytes using Kafka's encoding rules.
 type encoder interface {
@@ -23,8 +19,6 @@ func Encode(in encoder) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Printf("prepEnc.length=%d", prepEnc.length)
 
 	realEnc.raw = make([]byte, prepEnc.length)
 	err = in.encode(&realEnc)

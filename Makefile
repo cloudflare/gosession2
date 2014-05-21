@@ -17,11 +17,19 @@ race:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -v ./...
 
 .PHONY: test-race
 test-race:
 	go test -race ./...
+
+.PHONY: run-tls-server
+run-tls-server: all
+	./bin/gophqd -tls.ca=etc/ca.crt -tls.cert=etc/server.crt -tls.key=etc/server.key
+
+.PHONY: run-tls-producer
+run-tls-producer: all
+	./bin/gophq -mode=produce -tls.ca=etc/ca.crt -tls.cert=etc/client.crt -tls.key=etc/client.key
 
 TEST=$(subst $(space),$(newline),$(shell cd src && $(GOCMD) list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.Dir}}{{end}}' ./...))
 

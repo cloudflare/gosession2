@@ -13,13 +13,14 @@ func TestConsumer(t *testing.T) {
 	addr := l.Addr()
 
 	config := &gophq.ConsumerConfig{
+		Topic:       "topic",
 		MinBytes:    1024,
 		MaxBytes:    16384,
 		MaxWaitTime: 1 * time.Second,
 		FetchOffset: 0,
 	}
 
-	consumer, err := gophq.NewConsumer(addr.Network(), addr.String(), "topic", config)
+	consumer, err := gophq.NewConsumer(addr.Network(), addr.String(), config)
 	if err != nil {
 		t.Fatalf("NewConsumer: %v", err)
 	}

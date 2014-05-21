@@ -2,6 +2,7 @@ package gophqd
 
 import (
 	"gophq.io/proto"
+	"gophq.io/tls"
 	"log"
 	"net"
 	"os"
@@ -10,7 +11,10 @@ import (
 
 type Server struct {
 	sync.Mutex
+
 	wg sync.WaitGroup
+
+	TLSConfig *tls.TLSConfig
 }
 
 func (this *Server) Serve(l net.Listener) error {
@@ -31,6 +35,9 @@ func (this *Server) Serve(l net.Listener) error {
 		case *net.TCPConn:
 			// TODO set socket buffer sizes
 			// http://golang.org/pkg/net/#TCPConn.SetReadBuffer
+
+			// switch socket to use TLS if configured
+			c = this.TLSConfig.Server(c)
 
 		case *net.UnixConn:
 			log.Printf("using a unix socket [%T]", conn)

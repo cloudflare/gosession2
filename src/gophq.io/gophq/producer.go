@@ -2,23 +2,30 @@ package gophq
 
 import (
 	"gophq.io/proto"
+	"gophq.io/tls"
 	"net"
 )
-
-// TODO make Producer safe to use from multiple goroutines
 
 type Producer struct {
 	net.Conn
 }
 
-func NewProducer(network, addr string) (*Producer, error) {
+// NewProducer establishes a new producer connection
+// to the broker.
+func NewProducer(network, addr string, tlsConf *tls.TLSConfig) (*Producer, error) {
 	c, err := net.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
+
+	// this works even if tlsConf is nil
+	c = tlsConf.Client(c)
+
 	return &Producer{c}, nil
 }
 
+// SendMessage sends a ProduceRequest with a MessageSet containing
+// a single Message (Key/Value) to the broker.
 func (p *Producer) SendMessage(topic string, key, value []byte) error {
 	produceReq := &proto.ProduceRequest{
 		Topic: topic,

@@ -1,4 +1,4 @@
-package test
+package tls
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net"
 	"time"
@@ -45,10 +46,13 @@ func (this *TLSConfig) CACertificate() (*x509.Certificate, error) {
 	return x509.ParseCertificate(pemBlock.Bytes)
 }
 
-func (this *TLSConfig) Client() *tls.Config {
+func (this *TLSConfig) Client(c net.Conn) net.Conn {
 	if this == nil {
-		return nil
+		log.Printf("client not using TLS")
+		return c
 	}
+
+	log.Printf("client using TLS")
 
 	tlsCert, err := this.Certificate()
 	if err != nil {
@@ -74,13 +78,16 @@ func (this *TLSConfig) Client() *tls.Config {
 		InsecureSkipVerify: true,
 	}
 
-	return tlsConfig
+	return tls.Client(c, tlsConfig)
 }
 
-func (this *TLSConfig) Server() *tls.Config {
+func (this *TLSConfig) Server(c net.Conn) net.Conn {
 	if this == nil {
-		return nil
+		log.Printf("server not using TLS")
+		return c
 	}
+
+	log.Printf("server using TLS")
 
 	tlsCert, err := this.Certificate()
 	if err != nil {
@@ -104,7 +111,7 @@ func (this *TLSConfig) Server() *tls.Config {
 	}
 	tlsConfig.BuildNameToCertificate()
 
-	return tlsConfig
+	return tls.Server(c, tlsConfig)
 }
 
 func NewTLSConfig(ca, cert, key string) *TLSConfig {

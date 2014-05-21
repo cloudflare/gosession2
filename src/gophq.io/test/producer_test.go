@@ -15,7 +15,7 @@ func TestProducer(t *testing.T) {
 	defer l.Close()
 	addr := l.Addr()
 
-	producer, err := gophq.NewProducer(addr.Network(), addr.String())
+	producer, err := gophq.NewProducer(addr.Network(), addr.String(), tlsConf)
 	if err != nil {
 		t.Fatalf("NewProducer: %v", err)
 	}
@@ -37,7 +37,7 @@ func testAsyncProducer(t *testing.T, config *gophq.AsyncProducerConfig) {
 	defer l.Close()
 	addr := l.Addr()
 
-	producer, err := gophq.NewAsyncProducer(addr.Network(), addr.String(), config)
+	producer, err := gophq.NewAsyncProducer(addr.Network(), addr.String(), tlsConf, config)
 	if err != nil {
 		t.Fatalf("NewAsyncProducer: %v", err)
 	}

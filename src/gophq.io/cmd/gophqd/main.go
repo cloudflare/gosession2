@@ -4,6 +4,7 @@ import (
 	"flag"
 	"gophq.io/gophqd"
 	_ "gophq.io/pprof"
+	"gophq.io/tls"
 	"log"
 	"net"
 	"os"
@@ -14,6 +15,10 @@ import (
 var (
 	tcpListenFlag  = flag.String("tcp.listen", "127.0.0.1:9092", "TCP listener address")
 	unixListenFlag = flag.String("unix.listen", "", "Unix listener address")
+
+	caPath   = flag.String("tls.ca", "", "CA file")
+	certPath = flag.String("tls.cert", "", "certificate file")
+	keyPath  = flag.String("tls.key", "", "key file")
 )
 
 var revision string
@@ -22,6 +27,9 @@ func main() {
 	flag.Parse()
 
 	log.Printf("gophqd %s", revision)
+
+	// helper to deal with TLS files
+	tlsConf := tls.NewTLSConfig(*caPath, *certPath, *keyPath)
 
 	var tcpl net.Listener
 	if *tcpListenFlag != "" {
@@ -41,7 +49,9 @@ func main() {
 		}
 	}
 
-	s := &gophqd.Server{}
+	s := &gophqd.Server{
+		TLSConfig: tlsConf,
+	}
 
 	if tcpl != nil {
 		go serve(s, tcpl)
