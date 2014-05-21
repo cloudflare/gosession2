@@ -10,7 +10,8 @@ import (
 
 // TODO Implement a producer that allows events to be queued,
 // and flushes events if a configured number of bytes have
-// been buffered or if a configured time duration has elapsed.
+// been buffered (sum of key bytes and value bytes)
+// or if a configured time duration has elapsed.
 
 // Producer configuration
 type AsyncProducerConfig struct {
@@ -28,16 +29,17 @@ type AsyncProducerConfig struct {
 type AsyncProducer struct {
 	conn net.Conn
 
-	messages chan *proto.Message
-	flushing chan *proto.ProduceRequest
-	errors   chan error
-	done     chan bool
+	// TODO there are many ways to do this, but you
+	// probably want at least:
+	// 1. a messages channel
+	// 2. an errors channel
+	// 3. a "done" channel for clean shutdown
+
+	// you might want to append incoming messages
+	// to a proto.ProduceRequest
+	// produceRequest.AddMessage(msg)
 
 	config AsyncProducerConfig
-
-	nextRequest *proto.ProduceRequest
-
-	buffered int
 }
 
 // NewAsyncProducer creates a new producer that allows messages
@@ -53,22 +55,19 @@ func NewAsyncProducer(network, addr string, tlsConf *tls.TLSConfig,
 	c = tlsConf.Client(c)
 
 	p := &AsyncProducer{
-		conn:     c,
-		messages: make(chan *proto.Message),
-		flushing: make(chan *proto.ProduceRequest, 16),
-		errors:   make(chan error, 16),
-		done:     make(chan bool),
-		config:   *config,
+		conn:   c,
+		config: *config,
 	}
-	go p.run()
-	go p.flush()
+	// go p.something()
 	return p, nil
 }
 
 func (p *AsyncProducer) Close() error {
-	close(p.messages)
-	<-p.done
-	return p.conn.Close()
+	// Close some channels
+	// Maybe wait (read) from some channels
+	// Close the connection
+
+	return nil
 }
 
 func (p *AsyncProducer) QueueMessage(key, value []byte) {
@@ -85,87 +84,24 @@ func (p *AsyncProducer) Errors() chan error {
 
 // flush writes the next pending request to the broker.
 func (p *AsyncProducer) flush() {
-	defer close(p.done)
-	defer close(p.errors)
-
-	for {
-		req, ok := <-p.flushing
-		if !ok {
-			return
-		}
-
-		b, err := proto.Encode(&proto.Request{req})
-		if err != nil {
-			p.errors <- err
-			continue
-		}
-
-		_, err = p.conn.Write(b)
-		if err != nil {
-			p.errors <- err
-			continue
-		}
-	}
+	// TODO you might want a function like this
 }
 
 // submitNextRequest submits the nextRequest
 // for flusing.
 func (p *AsyncProducer) submitNextRequest() {
-	p.flushing <- p.nextRequest
-	p.nextRequest = nil
-	p.buffered = 0
+	// TODO you might want a function like this
 }
 
 // run is the main looop of the AsyncProducer
 func (p *AsyncProducer) run() {
-	timer := time.NewTimer(p.config.MaxBufferDuration)
-	defer timer.Stop()
+	// time.NewTimer could be useful
 
-	// stop timer until first message is queued
-	timer.Stop()
-
-	for {
-		select {
-		case msg, ok := <-p.messages:
-			if !ok {
-				// messages channel has closed. submit any
-				// pending data and exit the run loop.
-				if p.nextRequest != nil {
-					p.submitNextRequest()
-				}
-				close(p.flushing)
-				return
-			}
-
-			// allocate a new ProduceRequest if one
-			// doesn't exist already (i.e., start a new batch)
-			if p.nextRequest == nil {
-				p.nextRequest = &proto.ProduceRequest{Topic: p.config.Topic}
-				timer.Reset(p.config.MaxBufferDuration)
-			}
-
-			// append the message to the next ProduceRequest
-			// that will be flushed
-			p.nextRequest.AddMessage(msg)
-
-			// track the amount of data being buffered
-			p.buffered += len(msg.Key)
-			p.buffered += len(msg.Value)
-
-			// if the amount of buffered data exceeds the configured
-			// limit, submit the request to be flushed
-			if p.buffered >= p.config.MaxBufferedBytes {
-				log.Printf("buffered %d bytes, flushing", p.buffered)
-				p.submitNextRequest()
-			}
-
-		case now := <-timer.C:
-			// if the oldest data has existed for more than
-			// MaxBufferDuration, submit it to be flushed
-			log.Printf("max buffer duration at %v", now)
-			if p.nextRequest != nil {
-				p.submitNextRequest()
-			}
-		}
-	}
+	// for { select { } }
 }
+
+// TODO the consumer side of the server isn't quite done,
+// but you could hack handleProduceRequest in
+// gophqd/produce.go to just keep a list of messages
+// it has received so that you can extend the
+// unit tests in test/producer_test.go.
