@@ -25,7 +25,7 @@ test-race:
 
 .PHONY: run-tls-server
 run-tls-server: all
-	GODEBUG="schedtrace=1" ./bin/gophqd -tls.ca=etc/ca.crt -tls.cert=etc/server.crt -tls.key=etc/server.key
+	./bin/gophqd -tls.ca=etc/ca.crt -tls.cert=etc/server.crt -tls.key=etc/server.key
 
 .PHONY: run-tls-producer
 run-tls-producer: all
