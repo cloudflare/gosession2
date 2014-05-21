@@ -25,16 +25,6 @@ type TLSConfig struct {
 // Certificate creates a X.509 Key Pair from
 // Cert and Key bytes and prepares the Certificate.
 func (this *TLSConfig) Certificate() (tlsCert tls.Certificate, err error) {
-	tlsCert, err = tls.X509KeyPair(this.Cert, this.Key)
-	if err != nil {
-		return
-	}
-
-	x509Cert, err := x509.ParseCertificate(tlsCert.Certificate[0])
-	if err != nil {
-		return
-	}
-	tlsCert.Leaf = x509Cert
 	return
 }
 
@@ -43,11 +33,7 @@ var errNotPEMData = errors.New("not PEM data")
 // CACertificate decodes the PEM block in the CA bytes
 // and parses a X.509 certificate from the result.
 func (this *TLSConfig) CACertificate() (*x509.Certificate, error) {
-	pemBlock, _ := pem.Decode(this.CA)
-	if pemBlock == nil {
-		return nil, errNotPEMData
-	}
-	return x509.ParseCertificate(pemBlock.Bytes)
+	return nil, nil
 }
 
 // Client takes a net.Conn and returns a
@@ -61,31 +47,7 @@ func (this *TLSConfig) Client(c net.Conn) net.Conn {
 
 	log.Printf("client using TLS")
 
-	tlsCert, err := this.Certificate()
-	if err != nil {
-		panic(err)
-	}
-
-	caCert, err := this.CACertificate()
-	if err != nil {
-		panic(err)
-	}
-	caPool := x509.NewCertPool()
-	caPool.AddCert(caCert)
-
-	// see http://tip.golang.org/doc/go1.3#major_library_changes
-	// for more about ServerName and InsecureSkipVerify
-
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{tlsCert},
-		RootCAs:            caPool,
-		ClientCAs:          caPool,
-		CipherSuites:       fastCipherSuites,
-		NextProtos:         []string{"kafka"},
-		InsecureSkipVerify: true,
-	}
-
-	return tls.Client(c, tlsConfig)
+	return nil
 }
 
 // Server takes a net.Conn and returns a
@@ -99,29 +61,7 @@ func (this *TLSConfig) Server(c net.Conn) net.Conn {
 
 	log.Printf("server using TLS")
 
-	tlsCert, err := this.Certificate()
-	if err != nil {
-		panic(err)
-	}
-
-	caCert, err := this.CACertificate()
-	if err != nil {
-		panic(err)
-	}
-	caPool := x509.NewCertPool()
-	caPool.AddCert(caCert)
-
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{tlsCert},
-		RootCAs:      caPool,
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    caPool,
-		CipherSuites: fastCipherSuites,
-		NextProtos:   []string{"kafka"},
-	}
-	tlsConfig.BuildNameToCertificate()
-
-	return tls.Server(c, tlsConfig)
+	return nil
 }
 
 func NewTLSConfig(ca, cert, key string) *TLSConfig {
