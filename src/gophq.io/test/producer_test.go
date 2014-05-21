@@ -3,6 +3,7 @@ package test
 import (
 	"gophq.io/gophq"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -11,6 +12,8 @@ import (
 // so they are really just basic sanity checks.
 
 func TestProducer(t *testing.T) {
+	os.RemoveAll("topic.dat")
+
 	l, server := runServer()
 	defer l.Close()
 	addr := l.Addr()
@@ -33,6 +36,8 @@ func TestProducer(t *testing.T) {
 }
 
 func testAsyncProducer(t *testing.T, config *gophq.AsyncProducerConfig) {
+	os.RemoveAll("topic.dat")
+
 	l, server := runServer()
 	defer l.Close()
 	addr := l.Addr()

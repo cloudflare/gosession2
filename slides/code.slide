@@ -21,9 +21,9 @@ Railgun, RRDNS, Gargantuan Data
 * Agenda
 
 - 18:30 Welcome and Introduction
-- 18:35 Pair programming with instruction/Q&A
+- 18:35 Kyle Isom: Cryptography in Go
+- 18:45 Pair programming with instruction/Q&A
 - 19:20 Quick talk on tools and tips
-- 19:25 Kyle Isom: Cryptography in Go
 - 19:35 More pair programming (until the beer runs out)
 
 Let's make this interactive
@@ -36,292 +36,16 @@ Ask questions! And answer them!
 
 If you're new...
 
-- Build and extend a client/server Go project
-- Basics of the net package
-- Goroutines, channels and the sync package
 - Crypto, crypto, crypto
+- Basics of the net package
+- Goroutines, channels, timers
+- Build and extend a client/server Go project
 
 If you've been doing this for a while...
 
-- Buffered I/O, socket buffers, sendfile(2)
-- A few Go gotchas
-- Profiling and monitoring tools
 - Crypto, crypto, crypto
-
-* Current Obsession
-
-Distributed, Persisted Brokers/Queues/Topics
-
-New kids on the block written in Go:
-
-.link https://github.com/bitly/nsq
-.link https://github.com/mozilla-services/heka
-.link https://github.com/apcera/gnatsd
-
-Related projects:
-
-.link https://github.com/soundcloud/roshi
-.link https://github.com/influxdb/influxdb
-.link http://blog.jupo.org/2013/02/23/a-tale-of-two-queues
-
-* Elements of a fast queue
-
-- Good implementation language and runtime (maybe try this Go thing)
-- Use channels and goroutines where they make sense
-- Avoid them where they don't
-- Don't touch or copy data unnecessarily
-- Don't make the Garbage Collector work harder than it has to
-- Use a binary wire protocol for high throughput
-- Use the features of your OS (buffer cache, network stack, profiling, etc.)
-- Test, benchmark, profile and monitor
-
-* The de facto standard: Kafka
-
-.link http://kafka.apache.org/documentation.html
-.link https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol
-.link http://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
-
-A client library from Shopify:
-
-.link http://godoc.org/github.com/Shopify/sarama
-
-Basically, Kafka implements a set of files you can append to, seek in and read from
-
-I've extracted a simplified Produce/Fetch (Pub/Sub) protocol for this session
-
-* Let's write some code
-
-* Building
-
-git clone https://github.com/cloudflare/gosession2
-
-cd gosession2
-
-make
-
-Makefile assumes you have a recent version of the go tool in your PATH
-
-Makefile takes care of setting GOPATH for this project
-
-* Your own copy of the slides
-
-export GOPATH=$HOME/gopath
-
-go get code.google.com/p/go.tools/cmd/present
-
-cd /path/to/gosession2
-
-$GOPATH/bin/present
-
-lynx http://127.0.0.1:3999/slides/code.slide
-
-* Overview
-
-gophq.io is client/server code for a persistent queue
-
-`src/gophq.io/gophq` is the client code
-`src/gophq.io/cmd/gophq` is the client command
-
-`src/gophq.io/gophqd` is the server code
-`src/gophq.io/cmd/gophqd` is the server command
-
-`src/gophq.io/proto` is the common protocol code
-
-`src/gophq.io/test` contains client/server tests
-
-`src/gophq.io/tls` contains helper code for TLS
-
-* Branches
-
-Work on client/server code:
-
-	git checkout -b part1 https://github.com/cloudflare/gosession2
-
-Pick any TODO and go for it. Try to make the tests pass. Ask questions!
-
-Work on adding TLS encryption (or wait for Kyle's presentation):
-
-	git checkout -b part2 https://github.com/cloudflare/gosession2
-
-Complete code to try other challenges or experiment with the tools:
-
-	git checkout -b master https://github.com/cloudflare/gosession2
-
-* Part 1: Client/Server
-
-	git checkout -b part1 https://github.com/cloudflare/gosession2
-
-This is my attempt at a minimal Kafka clone
-
-Things to work on:
-
-- Asynchronous producer (`src/gophq.io/gophq/async_producer.go`)
-
-- Server side of consumer (`src/gophq.io/gophq/consume.go`)
-
-* Part 2: Crypto/TLS
-
-git checkout -b part2 https://github.com/cloudflare/gosession2
-
-gophqd -tls.ca=etc/ca.crt -tls.cert=etc/server.crt -tls.key=etc/server.key
-
-gophq -mode=produce -tls.ca=etc/ca.crt -tls.cert=etc/client.crt -tls.key=etc/client.key
-
-The code is in `src/gophq.io/tls/tls.go`
-
-* Challenge: Conns and Listeners
-
-A net.Listener accepts connections
-
-.link http://golang.org/pkg/net/#Listener
-
-Try to build a LimitListener that only allows a certain number of connections at a time
-
-Many Accept loop are probably subtly broken right now:
-
-.link http://golang.org/src/pkg/net/http/server.go#L1618
-
-.link http://golang.org/pkg/net/#Error
-
-.link https://code.google.com/p/go/issues/detail?id=6163
-
-See if you can write a test to break the Accept loop in
-
-	src/gophq.io/gophqd/server.go
-
-and then fix it
-
-* Challenge: hash/crc32
-
-Benchmark hash/crc32.IEEE against hash/crc32.Castagnoli
-
-See $GOROOT/src/pkg/hash/crc32/crc32_test.go to get started
-
-Update accordingly:
-
-	src/gophq.io/proto/crc32_field.go
-
-To understand this better, look at the code:
-
-.link http://golang.org/src/pkg/hash/crc32
-
-See also:
-
-.link https://issues.apache.org/jira/browse/KAFKA-1449
-
-* Challenge: Optimize gophq.io/proto
-
-Try to optimize encode/decode in src/gophq.io/proto
-
-Build some benchmarks
-
-Use the profiling tools to find the hot spots
-
-See if you can improve performance using sync.Cache in Go tip
-
-* Testing
-
-go test -help
-
-go test -c
-
-	Usage of ./src/gophq.io/test/test.test:
-	  -test.bench="": regular expression to select benchmarks to run
-	  -test.benchmem=false: print memory allocations for benchmarks
-	  -test.benchtime=1s: approximate run time for each benchmark
-	  -test.blockprofile="": write a goroutine blocking profile to the named file after execution
-	  -test.blockprofilerate=1: if >= 0, calls runtime.SetBlockProfileRate()
-	  -test.coverprofile="": write a coverage profile to the named file after execution
-	  -test.cpu="": comma-separated list of number of CPUs to use for each test
-	  -test.cpuprofile="": write a cpu profile to the named file during execution
-	  -test.memprofile="": write a memory profile to the named file after execution
-	  -test.memprofilerate=0: if >=0, sets runtime.MemProfileRate
-	  -test.outputdir="": directory in which to write profiles
-	  -test.parallel=1: maximum test parallelism
-	  -test.run="": regular expression to select tests and examples to run
-	  -test.short=false: run smaller test suite to save time
-	  -test.timeout=0: if positive, sets an aggregate time limit for all tests
-	  -test.v=false: verbose: print additional output
-
-* Testing: Cover Profile
-
-.link http://tip.golang.org/doc/go1.2#cover
-
-Make sure $GOPATH[0]/bin (first element of GOPATH) is in your PATH
-
-	go get code.google.com/p/go.tools/cmd/cover
-
-	go test -cover -coverpkg gophq.io/gophq,gophq.io/gophqd,gophq.io/tls gophq.io/test
-
-	ok	gophq.io/tests1.679s	coverage: 70.9% of statements in gophq.io/gophq, ...
-
-* Tools and tips
-
-* Environment variables
-
-GOMAXPROCS=N
-
-	export GOMAXPROCS=$[ 16 + $[ RANDOM % 16 ]]
-
-GODEBUG=gctrace=1|2
-
-	gc120(4): 2+7+270+102 us, 0 -> 1 MB, 8196 (600070-591874) objects,
-			240/234/0 sweeps, 6(63) handoff, 3(7) steal, 74/21/2 yields
-
-GODEBUG=schedtrace=1000 scheddetail=1
-
-	SCHED 2662ms: gomaxprocs=26 idleprocs=25 threads=8 idlethreads=3 runqueue=0 [...]
-
-* Tools
-
-pprof
-
-Race detector
-
-.link http://blog.golang.org/race-detector
-
-strace -etrace='!select,futex,epoll_wait,sched_yield' -f -T -p <pid>
-
-perf, dtrace
-
-I love: perf top -p <pid of Go program>
-
-* Profiler
-
-pprof
-
-.link https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
-.link http://research.swtch.com/macpprof
-.link http://golang.org/pkg/runtime/pprof
-.link http://golang.org/pkg/net/http/pprof
-.link http://golang.org/pkg/runtime/debug
-
-pprofer: a quick demo with CPU, memory and block profile
-
-pprofer needs some work to make it run on Mac OS X
-
-pprofer also needs a much prettier web interface
-
-* Tools: Race Detector
-
-	WARNING: DATA RACE
-	Read by goroutine 59:
-	  os.(*File).read()
-	      src/pkg/os/file_unix.go:175 +0x5b
-	  os.(*File).Read()
-	      src/pkg/os/file.go:95 +0xb9
-	  bufio.(*Reader).fill()
-	      src/pkg/bufio/bufio.go:119 +0x272
-
-	Goroutine 59 (running) created at: ...
-
-	Previous write by goroutine 57:
-	  os.(*file).close()
-	      src/pkg/os/file_unix.go:110 +0x164
-	  os.(*File).Close()
-	      src/pkg/os/file_unix.go:99 +0x43
-
-	Goroutine 57 (running) created at: ...
+- Profiling and monitoring tools
+- A few Go gotchas
 
 * Cryptography with Go
 
@@ -507,6 +231,280 @@ Please don't turn on `InsecureSkipVerify`.
 
 - Notice EC key is much smaller than RSA key
 - Notice EC key is generate much faster than RSA key
+
+* Distributed Queues with Go
+
+* Current Obsession
+
+Distributed, Persisted Brokers/Queues/Topics
+
+New kids on the block written in Go:
+
+.link https://github.com/bitly/nsq
+.link https://github.com/mozilla-services/heka
+.link https://github.com/apcera/gnatsd
+
+Related projects:
+
+.link https://github.com/soundcloud/roshi
+.link https://github.com/influxdb/influxdb
+.link http://blog.jupo.org/2013/02/23/a-tale-of-two-queues
+
+* Elements of a fast queue
+
+- Good implementation language and runtime (maybe try this Go thing)
+- Use channels and goroutines where they make sense
+- Avoid them where they don't
+- Don't touch or copy data unnecessarily
+- Don't make the Garbage Collector work harder than it has to
+- Use a binary wire protocol for high throughput
+- Use the features of your OS (buffer cache, network stack, profiling, etc.)
+- Test, benchmark, profile and monitor
+
+* Let's write some code
+
+* Building
+
+git clone https://github.com/cloudflare/gosession2
+
+cd gosession2
+
+make
+
+Makefile assumes you have a recent version of the go tool in your PATH
+
+Makefile takes care of setting GOPATH for this project
+
+* Your own copy of the slides
+
+export GOPATH=$HOME/gopath
+
+go get code.google.com/p/go.tools/cmd/present
+
+cd /path/to/gosession2
+
+$GOPATH/bin/present
+
+lynx http://127.0.0.1:3999/slides/code.slide
+
+* Task: Crypto/TLS
+
+git checkout -b crypto https://github.com/cloudflare/gosession2
+
+Certificates and scripts in `etc` to make your own
+
+gophqd -tls.ca=etc/ca.crt -tls.cert=etc/server.crt -tls.key=etc/server.key
+
+gophq -mode=produce -tls.ca=etc/ca.crt -tls.cert=etc/client.crt -tls.key=etc/client.key
+
+The code is in `src/gophq.io/tls/tls.go`
+
+There is also a function to generate a self-signed CA in Go, which is used in the tests
+
+* Task: Client/Server: Asynchronous Producer
+
+	git checkout -b asyncprod https://github.com/cloudflare/gosession2
+
+This is my attempt at a minimal Kafka clone
+
+`src/gophq.io/gophq/async_producer.go`
+
+Try to get these tests working:
+
+	go test gophq.io/test -tls=false -run=AsyncProducer -v
+
+The tests combine testing of the client and server parts. This encourages you to make components that can tear down cleanly.
+
+There's also some other challenges/things to investigate
+
+* Branches for Tasks
+
+Work on adding TLS encryption:
+
+	git checkout -b crypto https://github.com/cloudflare/gosession2
+
+Work on asynchronous producer:
+
+	git checkout -b asyncprod https://github.com/cloudflare/gosession2
+
+Complete code to try other challenges or experiment with the tools:
+
+	git checkout -b master https://github.com/cloudflare/gosession2
+
+* Code layout
+
+gophq.io is client/server code for an unfinished persistent queue
+
+`src/gophq.io/tls` contains helper code for TLS crypto
+
+`src/gophq.io/gophq` is the client code
+`src/gophq.io/cmd/gophq` is the client command
+
+`src/gophq.io/gophqd` is the server code
+`src/gophq.io/cmd/gophqd` is the server command
+
+`src/gophq.io/proto` is the common protocol code
+
+`src/gophq.io/test` contains client/server tests
+
+* Challenge: Conns and Listeners
+
+A net.Listener accepts connections
+
+.link http://golang.org/pkg/net/#Listener
+
+Try to build a LimitListener that only allows a certain number of connections at a time
+
+Many Accepts loop are probably subtly broken right now:
+
+.link http://golang.org/src/pkg/net/http/server.go#L1618
+
+.link http://golang.org/pkg/net/#Error
+
+.link https://code.google.com/p/go/issues/detail?id=6163
+
+See if you can write a test to break the Accept loop in
+
+	src/gophq.io/gophqd/server.go
+
+and then fix it
+
+* Challenge: hash/crc32
+
+Benchmark hash/crc32.IEEE against hash/crc32.Castagnoli
+
+See $GOROOT/src/pkg/hash/crc32/crc32_test.go to get started
+
+Update accordingly:
+
+	src/gophq.io/proto/crc32_field.go
+
+To understand this better, look at the code:
+
+.link http://golang.org/src/pkg/hash/crc32
+
+See also:
+
+.link https://issues.apache.org/jira/browse/KAFKA-1449
+
+* Challenge: Optimize gophq.io/proto
+
+Try to optimize encode/decode in src/gophq.io/proto (based on Sarama)
+
+Build some benchmarks
+
+Use the profiling tools to find the hot spots
+
+See if you can improve performance using sync.Cache in Go tip
+
+.link https://github.com/Shopify/sarama
+.link http://kafka.apache.org/documentation.html
+.link https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol
+.link http://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
+
+* Testing
+
+go test -help
+
+go test -c
+
+	Usage of ./src/gophq.io/test/test.test:
+	  -test.bench="": regular expression to select benchmarks to run
+	  -test.benchmem=false: print memory allocations for benchmarks
+	  -test.benchtime=1s: approximate run time for each benchmark
+	  -test.blockprofile="": write a goroutine blocking profile to the named file after execution
+	  -test.blockprofilerate=1: if >= 0, calls runtime.SetBlockProfileRate()
+	  -test.coverprofile="": write a coverage profile to the named file after execution
+	  -test.cpu="": comma-separated list of number of CPUs to use for each test
+	  -test.cpuprofile="": write a cpu profile to the named file during execution
+	  -test.memprofile="": write a memory profile to the named file after execution
+	  -test.memprofilerate=0: if >=0, sets runtime.MemProfileRate
+	  -test.outputdir="": directory in which to write profiles
+	  -test.parallel=1: maximum test parallelism
+	  -test.run="": regular expression to select tests and examples to run
+	  -test.short=false: run smaller test suite to save time
+	  -test.timeout=0: if positive, sets an aggregate time limit for all tests
+	  -test.v=false: verbose: print additional output
+
+* Testing: Cover Profile
+
+.link http://tip.golang.org/doc/go1.2#cover
+
+Make sure $GOPATH[0]/bin (first element of GOPATH) is in your PATH
+
+	go get code.google.com/p/go.tools/cmd/cover
+
+	go test -cover -coverpkg gophq.io/gophq,gophq.io/gophqd,gophq.io/tls gophq.io/test
+
+	ok	gophq.io/tests1.679s	coverage: 70.9% of statements in gophq.io/gophq, ...
+
+* Tools and tips
+
+* Environment variables
+
+GOMAXPROCS=N
+
+	export GOMAXPROCS=$[ 16 + $[ RANDOM % 16 ]]
+
+GODEBUG=gctrace=1|2
+
+	gc120(4): 2+7+270+102 us, 0 -> 1 MB, 8196 (600070-591874) objects,
+			240/234/0 sweeps, 6(63) handoff, 3(7) steal, 74/21/2 yields
+
+GODEBUG=schedtrace=1000 scheddetail=1
+
+	SCHED 2662ms: gomaxprocs=26 idleprocs=25 threads=8 idlethreads=3 runqueue=0 [...]
+
+* Tools
+
+pprof
+
+Race detector
+
+.link http://blog.golang.org/race-detector
+
+strace -etrace='!select,futex,epoll_wait,sched_yield' -f -T -p <pid>
+
+perf, dtrace
+
+Live demo: perf top -p <pid of Go program> is the bomb
+
+* Profiler
+
+pprof
+
+.link https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
+.link http://research.swtch.com/macpprof
+.link http://golang.org/pkg/runtime/pprof
+.link http://golang.org/pkg/net/http/pprof
+.link http://golang.org/pkg/runtime/debug
+
+pprofer: a quick demo with CPU, memory and block profile
+
+pprofer needs some work to make it run on Mac OS X
+
+pprofer also needs a much prettier web interface
+
+* Tools: Race Detector
+
+	WARNING: DATA RACE
+	Read by goroutine 59:
+	  os.(*File).read()
+	      src/pkg/os/file_unix.go:175 +0x5b
+	  os.(*File).Read()
+	      src/pkg/os/file.go:95 +0xb9
+	  bufio.(*Reader).fill()
+	      src/pkg/bufio/bufio.go:119 +0x272
+
+	Goroutine 59 (running) created at: ...
+
+	Previous write by goroutine 57:
+	  os.(*file).close()
+	      src/pkg/os/file_unix.go:110 +0x164
+	  os.(*File).Close()
+	      src/pkg/os/file_unix.go:99 +0x43
+
+	Goroutine 57 (running) created at: ...
 
 * Other topics for discussion
 

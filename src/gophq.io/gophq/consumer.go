@@ -26,7 +26,7 @@ type ConsumerConfig struct {
 	// little additional latency for reading only large chunks of data.
 	MinBytes int32
 
-	// maximum fetch size
+	// Maximum fetch size per request.
 	MaxBytes int32
 
 	// The max wait time is the maximum amount of time in

@@ -2,11 +2,14 @@ package gophqd
 
 import (
 	"gophq.io/proto"
+	"io"
 	"log"
 	"os"
 )
 
-func (this *Server) handleFetchRequest(req *proto.FetchRequest) (*proto.FetchResponse, error) {
+// TODO this code is incomplete
+
+func (this *Server) handleFetchRequest(w io.Writer, req *proto.FetchRequest) (*proto.FetchResponse, error) {
 	log.Printf("%+v", req)
 
 	response := &proto.FetchResponse{Topic: req.Topic}
@@ -43,5 +46,8 @@ func (this *Server) handleFetchRequest(req *proto.FetchRequest) (*proto.FetchRes
 		return response, nil
 	}
 
-	return &proto.FetchResponse{}, nil
+	// TODO send the result:
+	// written, err := io.CopyN(w, f, resultSize)
+
+	panic("not implemented")
 }

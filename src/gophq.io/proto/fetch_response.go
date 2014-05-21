@@ -1,5 +1,9 @@
 package proto
 
+import (
+	"log"
+)
+
 type FetchResponse struct {
 	Topic  string
 	Err    KError
@@ -41,6 +45,8 @@ func (fr *FetchResponse) decode(pd packetDecoder) error {
 	if err != nil {
 		return err
 	}
+
+	log.Printf("msgSetSize: %v", msgSetSize)
 
 	msgSetDecoder, err := pd.getSubset(int(msgSetSize))
 	if err != nil {

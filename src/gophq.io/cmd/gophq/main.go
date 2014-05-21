@@ -55,5 +55,6 @@ func produce(addr string, tlsConf *tls.TLSConfig, topic string) {
 }
 
 func consume(addr string, tlsConf *tls.TLSConfig, topic string, offset int64) {
-
+	// Use gophq.Consumer to fetch from the queue
+	panic("something for you to implement")
 }

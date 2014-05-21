@@ -3,19 +3,22 @@ package test
 import (
 	"gophq.io/gophq"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
 
-func TestConsumer(t *testing.T) {
+func TestProducerConsumer(t *testing.T) {
+	os.RemoveAll("topic.dat")
+
 	l, server := runServer()
 	defer l.Close()
 	addr := l.Addr()
 
 	config := &gophq.ConsumerConfig{
 		Topic:       "topic",
-		MinBytes:    1024,
-		MaxBytes:    16384,
+		MinBytes:    280,
+		MaxBytes:    280,
 		MaxWaitTime: 1 * time.Second,
 		FetchOffset: 0,
 	}

@@ -111,20 +111,28 @@ func (this *Server) handleClient(c net.Conn) error {
 				return err
 			}
 			b, err = proto.Encode(&proto.Response{response})
-		case *proto.FetchRequest:
-			response, err := this.handleFetchRequest(req)
+			_, err = c.Write(b)
 			if err != nil {
 				return err
 			}
-			b, err = proto.Encode(&proto.Response{response})
-		}
-		if err != nil {
-			return err
-		}
-
-		_, err = c.Write(b)
-		if err != nil {
-			return err
+		case *proto.FetchRequest:
+			response, err := this.handleFetchRequest(c, req)
+			if err != nil {
+				return err
+			}
+			// If the client request is erroneous, a response
+			// is returned in an error path that is then written
+			// here. If the request is valid,
+			// handleFetchRequest takes care of sending the
+			// response header and then using sendfile(2) to
+			// send the rest of the data.
+			if response != nil {
+				b, err = proto.Encode(&proto.Response{response})
+				_, err = c.Write(b)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 }

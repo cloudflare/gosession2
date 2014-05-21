@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+// TODO Implement a producer that allows events to be queued,
+// and flushes events if a configured number of bytes have
+// been buffered or if a configured time duration has elapsed.
+
 // Producer configuration
 type AsyncProducerConfig struct {
 	// Topic to produce to
@@ -20,7 +24,7 @@ type AsyncProducerConfig struct {
 	MaxBufferDuration time.Duration
 }
 
-// AsyncBProducer
+// AsyncProducer
 type AsyncProducer struct {
 	conn net.Conn
 
