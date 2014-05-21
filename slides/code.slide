@@ -1,0 +1,350 @@
+GoSF: Go Session 2
+
+Albert Strasheim, CloudFlare
+@fullung
+
+Kyle Isom, CloudFlare
+@kyleisom
+
+https://www.cloudflare.com
+
+* Welcome and Introduction
+
+* Welcome
+
+Welcome to CloudFlare
+
+Go at CloudFlare
+
+Railgun, RRDNS, Gargantuan Data
+
+* Agenda
+
+- 18:30 Welcome and Introduction
+- 18:35 Pair programming with instruction/Q&A
+- 19:20 Quick talk on tools and tips
+- 19:25 Kyle Isom: Cryptography in Go
+- 19:35 More pair programming (until the beer runs out)
+
+Let's make this interactive
+
+Decades of Go experience in this room tonight
+
+Ask questions! And answer them!
+
+* Lessons you could learn today
+
+If you're new...
+
+- Build and extend a client/server Go project
+- Basics of the net package
+- Goroutines, channels and the sync package
+- Learn about the crypto packages
+
+If you've been doing this for a while...
+
+- Buffered I/O, socket buffers, sendfile(2)
+- A few Go gotchas
+- Profiling and monitoring tools
+- Learn about the crypto packages
+
+* Current Obsession
+
+Distributed, Persisted Brokers/Queues/Topics
+
+New kids on the block written in Go:
+
+.link https://github.com/bitly/nsq
+.link https://github.com/mozilla-services/heka
+.link https://github.com/apcera/gnatsd
+
+Related projects:
+
+.link https://github.com/soundcloud/roshi
+.link https://github.com/influxdb/influxdb
+.link http://blog.jupo.org/2013/02/23/a-tale-of-two-queues
+
+* Elements of a fast queue
+
+- Good implementation language and runtime (maybe try this Go thing)
+- Use channels and goroutines where they make sense
+- Avoid them where they don't
+- Don't touch or copy data unnecessarily
+- Don't make the Garbage Collector work harder than it has to
+- Use a binary wire protocol for high throughput
+- Use the features of your OS (buffer cache, network stack, profiling, etc.)
+- Test, benchmark, profile and monitor
+
+* The de facto standard: Kafka
+
+.link http://kafka.apache.org/documentation.html
+.link https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol
+.link http://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
+
+A client library from Shopify:
+
+.link http://godoc.org/github.com/Shopify/sarama
+
+Basically, Kafka implements a set of files you can append to, seek in and read from
+
+I've extracted a simplified Produce/Fetch (Pub/Sub) protocol for this session
+
+* Let's write some code
+
+* Building
+
+git clone https://github.com/cloudflare/gosession2
+
+cd gosession2
+
+make
+
+Makefile assumes you have a recent version of the go build tool in your PATH
+
+Makefile takes care of setting GOPATH for this project
+
+* Your own copy of the slides
+
+export GOPATH=$HOME/gopath
+
+go get code.google.com/p/go.tools/cmd/present
+
+cd /path/to/gosession2
+
+$GOPATH/bin/present
+
+lynx http://127.0.0.1:3999/slides/code.slide
+
+* Overview
+
+gophq.io is client/server code for a persistent queue
+
+`src/gophq.io/gophq` is the client code
+`src/gophq.io/cmd/gophq` is the client command
+
+`src/gophq.io/gophqd` is the server code
+`src/gophq.io/cmd/gophqd` is the server command
+
+`src/gophq.io/proto` is the common protocol code
+
+`src/gophq.io/test` contains client/server tests
+
+* Branches
+
+Work on client/server code:
+
+	git checkout -b part1 https://github.com/cloudflare/gosession2
+
+Pick any TODO and go for it. Try to make the tests pass. Ask questions!
+
+Work on adding TLS encryption (we'll all do this after Kyle's presentation):
+
+	git checkout -b part2 https://github.com/cloudflare/gosession2
+
+Complete code to try other challenges or experiment with the tools:
+
+	git checkout -b master https://github.com/cloudflare/gosession2
+
+* Part 1: Client/Server
+
+	git checkout -b part1 https://github.com/cloudflare/gosession2
+
+* Part 2: TLS
+
+	git checkout -b part2 https://github.com/cloudflare/gosession2
+
+* Challenge: Conns and Listeners
+
+A net.Listener accepts connections
+
+.link http://golang.org/pkg/net/#Listener
+
+Many Accept loop are probably subtly broken right now:
+
+.link http://golang.org/src/pkg/net/http/server.go#L1618
+
+.link http://golang.org/pkg/net/#Error
+
+.link https://code.google.com/p/go/issues/detail?id=6163
+
+See if you can write a test to break the Accept loop in
+
+	src/gophq.io/gophqd/server.go
+
+and then fix it
+
+* Challenge: hash/crc32
+
+Benchmark hash/crc32.IEEE against hash/crc32.Castagnoli
+
+See $GOROOT/src/pkg/hash/crc32/crc32_test.go to get started
+
+Update accordingly:
+
+	src/gophq.io/proto/crc32_field.go
+
+To understand this better, look at the code:
+
+.link http://golang.org/src/pkg/hash/crc32
+
+See also:
+
+.link https://issues.apache.org/jira/browse/KAFKA-1449
+
+* Challenge: Optimize gophq.io/proto
+
+Try to optimize encode/decode in src/gophq.io/proto
+
+Build some benchmarks
+
+Use the profiling tools to find the hot spots
+
+See if you can improve performance using sync.Cache in Go tip
+
+* Testing
+
+go test -help
+
+go test -c
+
+	Usage of ./src/gophq.io/test/test.test:
+	  -test.bench="": regular expression to select benchmarks to run
+	  -test.benchmem=false: print memory allocations for benchmarks
+	  -test.benchtime=1s: approximate run time for each benchmark
+	  -test.blockprofile="": write a goroutine blocking profile to the named file after execution
+	  -test.blockprofilerate=1: if >= 0, calls runtime.SetBlockProfileRate()
+	  -test.coverprofile="": write a coverage profile to the named file after execution
+	  -test.cpu="": comma-separated list of number of CPUs to use for each test
+	  -test.cpuprofile="": write a cpu profile to the named file during execution
+	  -test.memprofile="": write a memory profile to the named file after execution
+	  -test.memprofilerate=0: if >=0, sets runtime.MemProfileRate
+	  -test.outputdir="": directory in which to write profiles
+	  -test.parallel=1: maximum test parallelism
+	  -test.run="": regular expression to select tests and examples to run
+	  -test.short=false: run smaller test suite to save time
+	  -test.timeout=0: if positive, sets an aggregate time limit for all tests
+	  -test.v=false: verbose: print additional output
+
+* Testing: Cover Profile
+
+.link http://tip.golang.org/doc/go1.2#cover
+
+	example here
+
+* Tools and tips
+
+* Environment variables
+
+GOMAXPROCS=N
+
+	export GOMAXPROCS=$[ 16 + $[ RANDOM % 16 ]]
+
+GODEBUG=gctrace=1|2
+
+	example here
+
+GODEBUG=schedtrace=1000 scheddetail=1
+
+	example here
+
+* Tools
+
+pprof
+
+Race detector
+
+.link http://blog.golang.org/race-detector
+
+strace -etrace='!select,futex,epoll_wait,sched_yield' -f -T -p <pid>
+
+perf, dtrace
+
+* Profiler
+
+pprof
+
+.link https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
+.link http://research.swtch.com/macpprof
+.link http://golang.org/pkg/runtime/pprof
+.link http://golang.org/pkg/net/http/pprof
+.link http://golang.org/pkg/runtime/debug
+
+pprofer: a quick demo with CPU, memory and block profile
+
+pprofer needs some work to make it run on Mac OS X
+
+pprofer also need a much prettier web interface
+
+* Tools: Race Detector
+
+	show example output
+
+* Cryptography with Go
+
+* Introduction to crypto/tls
+
+point
+
+* More slides here
+
+point
+
+* Other topics for discussion
+
+* More about Concurrency
+
+.link http://blog.golang.org/share-memory-by-communicating
+.link http://blog.golang.org/go-concurrency-patterns-timing-out-and
+.link http://blog.golang.org/pipelines
+.link http://blog.golang.org/concurrency-is-not-parallelism
+.link http://blog.golang.org/advanced-go-concurrency-patterns
+.link https://github.com/gophercon/2014-talks/raw/master/John_Graham-Cumming_A_Channel_Compendium.pdf
+
+* Useful standard library packages
+
+.link http://golang.org/pkg/container/heap
+.link http://golang.org/pkg/container/ring
+.link http://golang.org/pkg/container/list
+.link http://golang.org/pkg/index/suffixarray
+.link http://golang.org/pkg/syscall
+.link http://golang.org/pkg/testing/iotest
+.link http://golang.org/pkg/testing/quick
+.link http://golang.org/pkg/text/template
+
+* Other OS features
+
+No-downtime upgrades:
+
+.link http://golang.org/pkg/net/#FileConn
+.link http://golang.org/pkg/net/#FileListener
+
+systemd integration for your Go service:
+
+.link https://github.com/coreos/go-systemd
+
+.link http://godoc.org/github.com/coreos/go-systemd/activation
+
+.link http://godoc.org/github.com/coreos/go-systemd/journal
+
+* Another (old?) idea for Go dependencies
+
+Libraries on GitHub should work with go get
+
+For internal code, we like repositories with a top-level Makefile
+
+We also like repeatable builds
+
+Import third party (vendor) code using git subtree
+
+.link https://blogs.atlassian.com/2013/05/alternatives-to-git-submodule-git-subtree/
+
+A tool could help, but we haven't wanted it enough to actually build one
+
+gorilla/context and gorilla/mux is merged into gosession2 in this way
+
+* GoSmith is awesome
+
+Random Go program generator that exposes bugs in the Go compiler
+
+.link https://code.google.com/p/gosmith
+.link https://code.google.com/p/go/issues/list?can=1&q=label%3AGoSmith
