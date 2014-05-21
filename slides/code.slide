@@ -99,7 +99,7 @@ cd gosession2
 
 make
 
-Makefile assumes you have a recent version of the go build tool in your PATH
+Makefile assumes you have a recent version of the go tool in your PATH
 
 Makefile takes care of setting GOPATH for this project
 
@@ -129,6 +129,8 @@ gophq.io is client/server code for a persistent queue
 
 `src/gophq.io/test` contains client/server tests
 
+`src/gophq.io/tls` contains helper code for TLS
+
 * Branches
 
 Work on client/server code:
@@ -137,7 +139,7 @@ Work on client/server code:
 
 Pick any TODO and go for it. Try to make the tests pass. Ask questions!
 
-Work on adding TLS encryption (we'll all do this after Kyle's presentation):
+Work on adding TLS encryption (or wait for Kyle's presentation):
 
 	git checkout -b part2 https://github.com/cloudflare/gosession2
 
@@ -229,7 +231,15 @@ go test -c
 
 .link http://tip.golang.org/doc/go1.2#cover
 
-	example here
+Make sure $GOPATH[0]/bin (first element of GOPATH) is in your PATH
+
+	go get code.google.com/p/go.tools/cmd/cover
+
+	go test -cover -coverpkg gophq.io/gophq,gophq.io/gophqd,gophq.io/tls gophq.io/test
+
+	ok	gophq.io/tests1.679s	coverage: 70.9% of statements in gophq.io/gophq, ...
+
+rm -rf src/code.google.com if the Makefile gets confused
 
 * Tools and tips
 
@@ -241,11 +251,12 @@ GOMAXPROCS=N
 
 GODEBUG=gctrace=1|2
 
-	example here
+	gc120(4): 2+7+270+102 us, 0 -> 1 MB, 8196 (600070-591874) objects,
+			240/234/0 sweeps, 6(63) handoff, 3(7) steal, 74/21/2 yields
 
 GODEBUG=schedtrace=1000 scheddetail=1
 
-	example here
+	SCHED 2662ms: gomaxprocs=26 idleprocs=25 threads=8 idlethreads=3 runqueue=0 [...]
 
 * Tools
 
@@ -258,6 +269,8 @@ Race detector
 strace -etrace='!select,futex,epoll_wait,sched_yield' -f -T -p <pid>
 
 perf, dtrace
+
+I love: perf top -p <pid of Go program>
 
 * Profiler
 
@@ -273,11 +286,28 @@ pprofer: a quick demo with CPU, memory and block profile
 
 pprofer needs some work to make it run on Mac OS X
 
-pprofer also need a much prettier web interface
+pprofer also needs a much prettier web interface
 
 * Tools: Race Detector
 
-	show example output
+	WARNING: DATA RACE
+	Read by goroutine 59:
+	  os.(*File).read()
+	      src/pkg/os/file_unix.go:175 +0x5b
+	  os.(*File).Read()
+	      src/pkg/os/file.go:95 +0xb9
+	  bufio.(*Reader).fill()
+	      src/pkg/bufio/bufio.go:119 +0x272
+
+	Goroutine 59 (running) created at: ...
+
+	Previous write by goroutine 57:
+	  os.(*file).close()
+	      src/pkg/os/file_unix.go:110 +0x164
+	  os.(*File).Close()
+	      src/pkg/os/file_unix.go:99 +0x43
+
+	Goroutine 57 (running) created at: ...
 
 * Cryptography with Go
 
