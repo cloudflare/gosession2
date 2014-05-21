@@ -22,6 +22,8 @@ type TLSConfig struct {
 	Key  []byte
 }
 
+// Certificate creates a X.509 Key Pair from
+// Cert and Key bytes and prepares the Certificate.
 func (this *TLSConfig) Certificate() (tlsCert tls.Certificate, err error) {
 	tlsCert, err = tls.X509KeyPair(this.Cert, this.Key)
 	if err != nil {
@@ -38,6 +40,8 @@ func (this *TLSConfig) Certificate() (tlsCert tls.Certificate, err error) {
 
 var errNotPEMData = errors.New("not PEM data")
 
+// CACertificate decodes the PEM block in the CA bytes
+// and parses a X.509 certificate from the result.
 func (this *TLSConfig) CACertificate() (*x509.Certificate, error) {
 	pemBlock, _ := pem.Decode(this.CA)
 	if pemBlock == nil {
@@ -46,6 +50,9 @@ func (this *TLSConfig) CACertificate() (*x509.Certificate, error) {
 	return x509.ParseCertificate(pemBlock.Bytes)
 }
 
+// Client takes a net.Conn and returns a
+// crypto/tls.Conn for use on the client side of
+// a TLS connection.
 func (this *TLSConfig) Client(c net.Conn) net.Conn {
 	if this == nil {
 		log.Printf("client not using TLS")
@@ -81,6 +88,9 @@ func (this *TLSConfig) Client(c net.Conn) net.Conn {
 	return tls.Client(c, tlsConfig)
 }
 
+// Server takes a net.Conn and returns a
+// crypto/tls.Conn for use on the server side of
+// a TLS connection.
 func (this *TLSConfig) Server(c net.Conn) net.Conn {
 	if this == nil {
 		log.Printf("server not using TLS")
@@ -146,8 +156,10 @@ var fastCipherSuites = []uint16{
 	tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 }
 
-// Code from $GOROOT/src/pkg/crypto/tls/generate_cert.go
+// Lots of hints in $GOROOT/src/pkg/crypto/tls/generate_cert.go
 
+// SelfSignedTLSConfig generates a self-signed
+// CA, certificate and key. Very useful for unit testing.
 func SelfSignedTLSConfig() *TLSConfig {
 	const rsaBits = 2048
 	priv, err := rsa.GenerateKey(rand.Reader, rsaBits)
