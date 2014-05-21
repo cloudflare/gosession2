@@ -39,14 +39,14 @@ If you're new...
 - Build and extend a client/server Go project
 - Basics of the net package
 - Goroutines, channels and the sync package
-- Learn about the crypto packages
+- Crypto, crypto, crypto
 
 If you've been doing this for a while...
 
 - Buffered I/O, socket buffers, sendfile(2)
 - A few Go gotchas
 - Profiling and monitoring tools
-- Learn about the crypto packages
+- Crypto, crypto, crypto
 
 * Current Obsession
 
@@ -311,13 +311,188 @@ pprofer also needs a much prettier web interface
 
 * Cryptography with Go
 
-* Introduction to crypto/tls
+* Goals of secure systems
 
-point
+- Confidentiality
+- Integrity
+- Authenticity
 
-* More slides here
+* Diff'rent strokes
 
-point
+There's a difference between symmetric encryption and public key
+encryption.
+
+- Symmetric: AES, HMAC
+- Public key: RSA, elliptic curves, digital signatures
+- Hybrid: public key crypto used to exchange secret keys
+- Alternatives to public keys: password-derived keys, password key exchange
+
+* Crypto packages
+
+Strong base with tools for
+
+- hashing
+- encryption
+- password storage
+- generating encryption keys from
+- common protocols, like TLS, PGP, and OTR
+
+* Random data
+
+- Use `crypto/rand`
+- `rand.Reader` is an `io.Reader`
+- Uses operating system's PRNG
+
+* Random data (cont)
+
+.play demo/rand.go /^func Random/,
+
+* Hashing
+
+- Use SHA-2 (`crypto/sha256` or `crypto/sha512`)
+- Don't ever use MD5, avoid SHA-1 except as required
+- Used as a building block for many things
+
+* Hashing (cont)
+
+.play demo/hash.go /^func Hash/,
+
+* HMAC
+
+- Integrity and authenticity for secret key cryptography
+- Not the only choice, but a common and well-vetted choice
+- Based on a hash function
+- Requires a randomly-generated key (rule of thumb: same size as digest)
+
+* HMAC (cont)
+
+.code demo/hmac.go /^func HMAC/,/^}/
+.code demo/hmac.go /^func NewKey/,/^}/
+
+* HMAC (cont)
+
+.play demo/hmac.go /^func main/,
+
+* Secret key crypto
+
+- This is tricky and must be done right.
+- To much to cover in this talk.
+- Use NaCl.
+- If required to use AES, use KeyCzar (or find someone who knows what they're doing)
+
+* crypto/x509
+
+- Certificate handling
+- Certificate signature requests (as of Go 1.3)
+- Functions for serialising and parsing private keys
+
+* Password hashing
+
+- code.google.com/p/go.crypto/scrypt: good choice for password -> secret key
+- code.google.com/p/go.crypto/bcrypt: good choice for storing passwords
+
+bcrypt: don't need to generate and store a salt
+
+scrypt: requires a salt (random value, minimum of 128-bits). salt is
+public, but must be presented along with the password to produce the
+same hash.
+
+* Password hashing (cont)
+
+.play demo/bcrypt.go /^const cost/,
+
+* NaCl
+
+- code.google.com/p/go.crypto/nacl
+- use when possible
+- written by a well-respected cryptographer
+- doesn't originate from the NIST
+- fast
+
+* Cipher choice
+
+- Use whatever is specified in the RFC.
+- ECC is faster, RSA has been studied more in depth.
+- Avoid public key crypto where possible.
+
+TLS choices:
+
+- tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+- tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+- ChaCha20 eventually for mobile clients
+
+Want forward secrecy.
+
+* Forward secrecy
+
+- Compromising of private key doesn't compromise previous messages
+- Ephemeral keys (ECDHE)
+- Elliptic curves are the favourite here due to speed
+
+* Certificate chains
+
+- www.example.net is signed by
+- GlobalSign Intermediate 1 is signed by
+- GlobalSign Root Authority
+
+- Chains end up at a "trusted" root owned by a "reputable" authority
+
+* Root pools
+
+- x509 supports "certificate pools", which contain a collection of certificates.
+- Used to store trusted root certificates
+- Default is operating system's root stores
+
+* ServerName and InsecureSkipVerify
+
+- `ServerName` need to verify server's certificate
+- `InsecureSkipVerify` bypasses all authenticity checks
+
+Please don't turn on `InsecureSkipVerify`.
+
+* ServerName and InsecureSkipVerify
+
+.image http://i.imgur.com/kyL61PF.jpg
+
+* PEM encoding
+
+- Standard means of exchanging certificates and private keys
+- Header and footer with base64'd binary data in between
+
+    -----BEGIN CERTIFICATE-----
+    MIIC7jCCAdigAwIBAgIQLNdLfQSSSvdO96Mdz0vGQDALBgkqhkiG9w0BAQUwEjEQ
+    ...
+    wqVAD3A06+RXp3njOcyd1WpxlaFxWdIANCinY3wwh51PlA==
+    -----END CERTIFICATE-----
+
+- encoding/pem does marshaling and unmarshaling
+
+* Generating RSA keys
+
+.play demo/genrsa.go /^func main/,
+
+* Encrypting with RSA
+
+.play demo/rsacrypt.go /^func main/,
+
+* Signing with RSA
+
+.play demo/rsasign.go /^func main/,
+
+* Generating ECDSA keys
+
+- Need to select a curve
+- Standard library has NIST curves
+
+- P256: 256-bit security (use with AES-128)
+- P521: 521-bit security (not a typo; use with AES-256)
+
+* Generating ECDSA keys (cont)
+
+.play demo/genec.go /^func main/,
+
+- Notice EC key is much smaller than RSA key
+- Notice EC key is generate much faster than RSA key
 
 * Other topics for discussion
 

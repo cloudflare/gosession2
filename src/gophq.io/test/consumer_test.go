@@ -20,7 +20,7 @@ func TestConsumer(t *testing.T) {
 		FetchOffset: 0,
 	}
 
-	consumer, err := gophq.NewConsumer(addr.Network(), addr.String(), config)
+	consumer, err := gophq.NewConsumer(addr.Network(), addr.String(), tlsConf, config)
 	if err != nil {
 		t.Fatalf("NewConsumer: %v", err)
 	}

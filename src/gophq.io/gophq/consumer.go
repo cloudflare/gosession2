@@ -2,6 +2,7 @@ package gophq
 
 import (
 	"gophq.io/proto"
+	"gophq.io/tls"
 	"log"
 	"net"
 	"time"
@@ -45,11 +46,13 @@ type Consumer struct {
 
 // NewConsumer creates a new connection
 // to the broker for the specified topic.
-func NewConsumer(network, addr string, config *ConsumerConfig) (*Consumer, error) {
+func NewConsumer(network, addr string, tlsConf *tls.TLSConfig, config *ConsumerConfig) (*Consumer, error) {
 	c, err := net.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
+
+	c = tlsConf.Client(c)
 
 	fetchReq := &proto.FetchRequest{
 		Topic:       config.Topic,
