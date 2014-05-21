@@ -30,7 +30,7 @@ func (msb *MessageBlock) decode(pd packetDecoder) (err error) {
 		return err
 	}
 
-	pd.push(&lengthField{})
+	err = pd.push(&lengthField{})
 	if err != nil {
 		return err
 	}

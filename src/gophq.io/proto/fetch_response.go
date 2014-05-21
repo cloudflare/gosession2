@@ -15,6 +15,7 @@ func (fr *FetchResponse) encode(pe packetEncoder) error {
 	pe.putInt16(int16(fr.Err))
 
 	pe.push(&lengthField{})
+
 	err = fr.MsgSet.encode(pe)
 	if err != nil {
 		return err

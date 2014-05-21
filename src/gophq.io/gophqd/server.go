@@ -4,20 +4,13 @@ import (
 	"gophq.io/proto"
 	"log"
 	"net"
+	"os"
 	"sync"
 )
 
 type Server struct {
+	sync.Mutex
 	wg sync.WaitGroup
-
-	DataDir string
-}
-
-func (this *Server) DoMaintenance() error {
-	for {
-
-	}
-	return nil
 }
 
 func (this *Server) Serve(l net.Listener) error {
@@ -72,6 +65,11 @@ func (this *Server) Serve(l net.Listener) error {
 func (this *Server) Terminate() {
 	// TODO Signal shutdown to all client goroutines
 
+	// TODO Don't wait more than a configurable amount
+	// of time for shutdown, since shutdown might be
+	// due to SIGTERM, which will be followed by SIGKILL
+	// if it takes too long
+
 	// TODO Wait on the WaitGroup
 	this.wg.Wait()
 }
@@ -104,8 +102,17 @@ func (this *Server) handleClient(c net.Conn) error {
 		case *proto.ProduceRequest:
 			err = this.handleProduceRequest(req)
 		case *proto.FetchRequest:
-			err = this.handleFetchRequest(req)
+			response, err := this.handleFetchRequest(req)
+			if err != nil {
+				return err
+			}
+			b, err = proto.Encode(&proto.Response{response})
 		}
+		if err != nil {
+			return err
+		}
+
+		_, err = c.Write(b)
 		if err != nil {
 			return err
 		}
@@ -121,13 +128,22 @@ func (this *Server) handleProduceRequest(req *proto.ProduceRequest) error {
 	return nil
 }
 
-func (this *Server) handleFetchRequest(req *proto.FetchRequest) error {
-	return nil
+func (this *Server) handleFetchRequest(req *proto.FetchRequest) (*proto.FetchResponse, error) {
+	log.Printf("%+v", req)
+
+	response := &proto.FetchResponse{Topic: req.Topic}
+
+	// TODO topic name validation
+	f, err := os.Open(req.Topic + ".dat")
+	if err != nil {
+		log.Printf("unknown topic or partition: %v", req.Topic)
+		response.Err = proto.UnknownTopicOrPartition
+		return response, nil
+	}
+	defer f.Close()
+
+	return &proto.FetchResponse{}, nil
 }
-
-// TODO write message to disk... with crc32 hash
-
-// demo crc32 vs crc32c
 
 // A log for a topic named "my_topic" with two partitions consists
 // of two directories (namely my_topic_0 and my_topic_1) populated
@@ -181,10 +197,3 @@ func (this *Server) handleFetchRequest(req *proto.FetchRequest) error {
 // from the global offset value, and then reading from that file offset. The search
 // is done as a simple binary search variation against an in-memory range
 // maintained for each file.
-
-// The log provides the capability of getting the most recently written message to
-// allow clients to start subscribing as of "right now". This is also useful in the
-// case the consumer fails to consume its data within its SLA-specified number of
-// days. In this case when the client attempts to consume a non-existant offset it is
-// given an OutOfRangeException and can either reset itself or fail as appropriate
-// to the use case.

@@ -30,3 +30,23 @@ type DecodingError struct {
 func (err DecodingError) Error() string {
 	return fmt.Sprintf("Error while decoding packet: %s", err.Info)
 }
+
+func (err KError) Error() string {
+	switch err {
+	case NoError:
+		return "OK"
+	case OffsetOutOfRange:
+		return "offset out of range"
+	case InvalidMessage:
+		return "invalid message (CRC mismatch)"
+	case UnknownTopicOrPartition:
+		return "unknown topic or partition"
+	case InvalidMessageSize:
+		return "invalid message size"
+	case RequestTimedOut:
+		return "request timed out"
+	case MessageSizeTooLarge:
+		return "message size too large"
+	}
+	return "unknown server error"
+}

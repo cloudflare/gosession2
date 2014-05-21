@@ -3,7 +3,21 @@ package proto
 import (
 	"fmt"
 	"io"
+	"log"
 )
+
+type Response struct {
+	Body encoder
+}
+
+func (r *Response) encode(pe packetEncoder) (err error) {
+	pe.push(&lengthField{})
+	err = r.Body.encode(pe)
+	if err != nil {
+		return err
+	}
+	return pe.pop()
+}
 
 type lengthHeader struct {
 	length int32
@@ -33,6 +47,8 @@ func ReadRequestOrResponse(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("header done, need to read %v", decodedHeader.length)
 
 	// TODO it would be good to recycle this allocation
 	buf := make([]byte, decodedHeader.length)

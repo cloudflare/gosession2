@@ -14,7 +14,6 @@ import (
 var (
 	tcpListenFlag  = flag.String("tcp.listen", "127.0.0.1:9092", "TCP listener address")
 	unixListenFlag = flag.String("unix.listen", "", "Unix listener address")
-	dataDirFlag    = flag.String("datadir", "", "data directory (empty: disable persistence)")
 )
 
 var revision string
@@ -42,9 +41,7 @@ func main() {
 		}
 	}
 
-	s := &gophqd.Server{
-		DataDir: *dataDirFlag,
-	}
+	s := &gophqd.Server{}
 
 	if tcpl != nil {
 		go serve(s, tcpl)

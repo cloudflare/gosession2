@@ -1,6 +1,8 @@
 package gophq
 
 import (
+	"gophq.io/proto"
+	"log"
 	"net"
 	"time"
 )
@@ -12,27 +14,48 @@ const (
 
 type ConsumerConfig struct {
 	// minimum fetch size
-	MinBytes uint32
+	MinBytes int32
 
 	// maximum fetch size
-	MaxBytes uint32
+	MaxBytes int32
 
 	MaxWaitTime time.Duration
 
-	OffsetValue int64
+	FetchOffset int64
 }
 
 type Consumer struct {
 	net.Conn
 }
 
-func NewConsumer(topic string, config *ConsumerConfig) *Consumer {
-	net.Dial("", "")
-	return nil
-}
+func NewConsumer(network, addr string, topic string, config *ConsumerConfig) (*Consumer, error) {
+	c, err := net.Dial(network, addr)
+	if err != nil {
+		return nil, err
+	}
 
-func (this *Consumer) Close() error {
-	return nil
+	fetchReq := &proto.FetchRequest{
+		Topic:       topic,
+		MinBytes:    config.MinBytes,
+		MaxBytes:    config.MaxBytes,
+		MaxWaitTime: config.MaxWaitTime,
+		FetchOffset: config.FetchOffset,
+	}
+
+	b, err := proto.Encode(&proto.Request{fetchReq})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO a socket write buffer might help here
+	// TODO might want to set a write deadline
+
+	_, err = c.Write(b)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Consumer{c}, nil
 }
 
 type ConsumerEvent struct {
@@ -42,9 +65,22 @@ type ConsumerEvent struct {
 }
 
 func (this *Consumer) ReadEvent() *ConsumerEvent {
-	// TODO consider setting a ReadTimeout to detect
-	// a broker that doesn't adhere to MaxWaitTime
-	// or detect a violation of MaxWaitTime after the fact
+	b, err := proto.ReadRequestOrResponse(this)
+	if err != nil {
+		return &ConsumerEvent{Err: err}
+	}
+
+	var fetchResp proto.FetchResponse
+	err = proto.Decode(b, &fetchResp)
+	if err != nil {
+		return &ConsumerEvent{Err: err}
+	}
+
+	if fetchResp.Err != proto.NoError {
+		return &ConsumerEvent{Err: fetchResp.Err}
+	}
+
+	log.Printf("%+v", fetchResp)
 
 	return nil
 }

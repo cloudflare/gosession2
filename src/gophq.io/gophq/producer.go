@@ -20,12 +20,12 @@ func NewProducer(network, addr string) (*Producer, error) {
 }
 
 func (p *Producer) SendMessage(topic string, key, value []byte) error {
-	produceReq := proto.ProduceRequest{
+	produceReq := &proto.ProduceRequest{
 		Topic: topic,
 	}
 	produceReq.AddMessage(proto.NewMessage(key, value))
 
-	b, err := proto.Encode(&proto.Request{&produceReq})
+	b, err := proto.Encode(&proto.Request{produceReq})
 	if err != nil {
 		return err
 	}
