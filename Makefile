@@ -17,11 +17,11 @@ race:
 
 .PHONY: test
 test:
-	go test -v gophq.io/...
+	$(GOCMD) test -v gophq.io/...
 
 .PHONY: test-race
 test-race:
-	go test -race gophq.io/...
+	$(GOCMD) test -race gophq.io/...
 
 .PHONY: run-tls-server
 run-tls-server: all
