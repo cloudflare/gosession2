@@ -1,5 +1,11 @@
 package gophqd
 
+import (
+	"gophq.io/proto"
+	"log"
+	"os"
+)
+
 func (this *Server) handleProduceRequest(req *proto.ProduceRequest) (*proto.ProduceResponse, error) {
 	response := &proto.ProduceResponse{
 		Topic: req.Topic,

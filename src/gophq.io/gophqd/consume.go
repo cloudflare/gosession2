@@ -1,5 +1,11 @@
 package gophqd
 
+import (
+	"gophq.io/proto"
+	"log"
+	"os"
+)
+
 func (this *Server) handleFetchRequest(req *proto.FetchRequest) (*proto.FetchResponse, error) {
 	log.Printf("%+v", req)
 

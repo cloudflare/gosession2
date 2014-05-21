@@ -1,6 +1,7 @@
 package proto
 
 type Message struct {
+	Crc   uint32      // message CRC
 	Key   []byte      // the message key, may be nil
 	Value []byte      // the message contents
 	Set   *MessageSet // the message set a message might wrap
@@ -23,7 +24,8 @@ func (m *Message) encode(pe packetEncoder) error {
 }
 
 func (m *Message) decode(pd packetDecoder) (err error) {
-	err = pd.push(&crc32Field{})
+	crc := &crc32Field{}
+	err = pd.push(crc)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,13 @@ func (m *Message) decode(pd packetDecoder) (err error) {
 		return err
 	}
 
-	return pd.pop()
+	err = pd.pop()
+	if err != nil {
+		return err
+	}
+	m.Crc = crc.crc
+
+	return nil
 }
 
 func (m *Message) decodeSet() (err error) {

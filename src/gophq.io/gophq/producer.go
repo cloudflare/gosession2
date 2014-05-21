@@ -3,6 +3,7 @@ package gophq
 import (
 	"gophq.io/proto"
 	"gophq.io/tls"
+	"log"
 	"net"
 )
 
@@ -44,5 +45,21 @@ func (p *Producer) SendMessage(topic string, key, value []byte) error {
 	if err != nil {
 		return err
 	}
+
+	b, err = proto.ReadRequestOrResponse(p)
+	if err != nil {
+		return err
+	}
+
+	var produceResp proto.ProduceResponse
+	err = proto.Decode(b, &produceResp)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("%+v", produceResp)
+
+	// Offset in ProduceResponse is not returned for now
+
 	return nil
 }
